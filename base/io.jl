@@ -73,25 +73,15 @@ function write(s::IO, a::AbstractArray)
     return nb
 end
 
-function write(s::IO, ch::Char)
-    c = reinterpret(UInt32, ch)
-    if c < 0x80
-        return write(s, c%UInt8)
-    elseif c < 0x800
-        return (write(s, (( c >> 6          ) | 0xC0)%UInt8)) +
-               (write(s, (( c        & 0x3F ) | 0x80)%UInt8))
-    elseif c < 0x10000
-        return (write(s, (( c >> 12         ) | 0xE0)%UInt8)) +
-               (write(s, (((c >> 6)  & 0x3F ) | 0x80)%UInt8)) +
-               (write(s, (( c        & 0x3F ) | 0x80)%UInt8))
-    elseif c < 0x110000
-        return (write(s, (( c >> 18         ) | 0xF0)%UInt8)) +
-               (write(s, (((c >> 12) & 0x3F ) | 0x80)%UInt8)) +
-               (write(s, (((c >> 6)  & 0x3F ) | 0x80)%UInt8)) +
-               (write(s, (( c        & 0x3F ) | 0x80)%UInt8))
-    else
-        return write(s, '\ufffd')
+function write(io::IO, c::Char)
+    u = bswap(reinterpret(UInt32, c))
+    n = 24 & trailing_zeros(u)
+    u >>= n
+    while true
+        write(io, u % UInt8)
+        0 < (u >>= 8) || break
     end
+    n >> 3
 end
 
 function write(s::IO, p::Ptr, n::Integer)
