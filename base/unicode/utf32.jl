@@ -168,7 +168,7 @@ function convert(::Type{UTF32String}, dat::AbstractVector{Char})
 end
 
 convert{T<:Union{Int32,UInt32}}(::Type{UTF32String}, data::AbstractVector{T}) =
-    convert(UTF32String, reinterpret(Char, data))
+    convert(UTF32String, map(Char, data))
 
 convert{T<:AbstractString}(::Type{T}, v::AbstractVector{Char}) = convert(T, utf32(v))
 
@@ -191,7 +191,7 @@ unsafe_convert{T<:Union{Int32,UInt32,Char}}(::Type{Ptr{T}}, s::UTF32String) =
 function convert(T::Type{UTF32String}, bytes::AbstractArray{UInt8})
     isempty(bytes) && return empty_utf32
     length(bytes) & 3 != 0 && throw(UnicodeError(UTF_ERR_ODD_BYTES_32,0,0))
-    data = reinterpret(Char, bytes)
+    data = map(Char, bytes)
     # check for byte-order mark (BOM):
     if data[1] == Char(0x0000feff) # native byte order
         d = Array(Char, length(data))
