@@ -15,8 +15,8 @@ function convert(::Type{Char}, u::UInt32)
     (u < 0xd800) | (0xdfff < u) & (u <= 0x10ffff) || error("invalid code point: $u")
     c = (u & 0x3f) | ((u << 2) & 0x3f00) | ((u << 4) & 0x3f0000) | ((u << 6) & 0x3f000000)
     reinterpret(Char, ifelse(u <= 0x7f, u,
-        c | ifelse(u <= 0x00000fff, 0x0000c080,
-            ifelse(u <= 0x0003ffff, 0x00e08080, 0xf0808080))))
+        c | ifelse(u <= 0x000007ff, 0x0000c080,
+            ifelse(u <= 0x0000ffff, 0x00e08080, 0xf0808080))))
 end
 
 convert(::Type{Char}, x::Number) = Char(UInt32(x))
