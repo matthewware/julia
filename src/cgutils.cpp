@@ -1592,6 +1592,8 @@ static jl_value_t *static_constant_instance(Constant *constant, jl_value_t *jt)
     ConstantInt *cint = dyn_cast<ConstantInt>(constant);
     if (cint != NULL) {
         assert(jl_is_datatype(jt));
+        if (jt == (jl_value_t*)jl_bool_type)
+            return cint->isZero() ? jl_false : jl_true;
         return jl_new_bits(jt,
             const_cast<uint64_t *>(cint->getValue().getRawData()));
     }
@@ -1618,8 +1620,6 @@ static jl_value_t *static_constant_instance(Constant *constant, jl_value_t *jt)
         }
     }
 
-    assert(jl_is_tuple_type(jt));
-
     size_t nargs = 0;
     ConstantStruct *cst = NULL;
     ConstantVector *cvec = NULL;
@@ -1632,6 +1632,8 @@ static jl_value_t *static_constant_instance(Constant *constant, jl_value_t *jt)
         nargs = carr->getType()->getNumElements();
     else
         assert(false && "Cannot process this type of constant");
+
+    assert(jl_is_tuple_type(jt));
 
     jl_value_t **tupleargs;
     JL_GC_PUSHARGS(tupleargs, nargs);
