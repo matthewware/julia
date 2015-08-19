@@ -129,22 +129,22 @@ function read!{T}(s::IO, a::Array{T})
 end
 
 function read(s::IO, ::Type{Char})
-    ch = read(s, UInt8)
-    if ch < 0x80
-        return Char(ch)
+    b0 = read(s, UInt8)
+    n = leading_ones(b0)
+    c = UInt32(b0)
+    2 <= n <= 4 || return reinterpret(Char, c)
+    mark(s)
+    while n > 1
+        b = read(s, UInt8)
+        if b & 0xc0 != 0x80
+            reset(s)
+            return reinterpret(Char, UInt32(b0))
+        end
+        c <<= 8
+        c |= b
+        n -= 1
     end
-
-    # mimic utf8.next function
-    trailing = Base.utf8_trailing[ch+1]
-    c::UInt32 = 0
-    for j = 1:trailing
-        c += ch
-        c <<= 6
-        ch = read(s, UInt8)
-    end
-    c += ch
-    c -= Base.utf8_offset[trailing+1]
-    Char(c)
+    return reinterpret(Char, c)
 end
 
 function readuntil(s::IO, delim::Char)
